@@ -11,8 +11,8 @@ from models.builder import build_graph
 from API.train import train_model, set_random_seed, get_root_logger
 
 print("GPU Available: ", tf.test.is_gpu_available())
-physical_devices = tf.config.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
+# physical_devices = tf.config.list_physical_devices('GPU')
+# tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
@@ -26,32 +26,8 @@ def parse_args():
         default='',
         action='store_true',
         help='whether to evaluate the checkpoint during training')
-    parser.add_argument(
-        '--gpus',
-        type=int,
-        default=1,
-        help='number of gpus to use '
-        '(only applicable to non-distributed training)')
     parser.add_argument('--seed', type=int, default=555, help='random seed')
-    parser.add_argument(
-        '--deterministic',
-        default='',
-        action='store_true',
-        help='whether to set deterministic options for CUDNN backend.')
-    parser.add_argument(
-        '--launcher',
-        choices=['none', 'pytorch', 'slurm', 'mpi'],
-        default='none',
-        help='job launcher')
-    parser.add_argument('--local_rank', type=int, default=0)
-    parser.add_argument(
-        '--autoscale-lr',
-        default='',
-        action='store_true',
-        help='automatically scale lr with the number of gpus')
     args = parser.parse_args()
-    if 'LOCAL_RANK' not in os.environ:
-        os.environ['LOCAL_RANK'] = str(args.local_rank)
 
     return args
 

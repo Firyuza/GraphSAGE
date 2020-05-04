@@ -1,25 +1,26 @@
 from datetime import datetime
 
-# custom_aggregator=dict(
-#             type='ProteinAggregator',
-#             nrof_neigh_per_batch=10,
-#             embd_shape=[3, 1],
-#             depth=2,
-#             aggregators_shape=[(1, 1, 2, 1), (1, 1, 2, 1)],
-#             aggregator_type=dict(
-#                 type='PoolAggregator',
-#                 activation='relu',
-#                 pool_op='reduce_max')
+# custom_aggregator = dict(
+#     type='ProteinAggregator',
+#     nrof_neigh_per_batch=nrof_neigh_per_batch,
+#     embd_shape=[3, 1],
+#     depth=2,
+#     aggregators_shape=[((None, nrof_neigh_per_batch, 1), 1, 2, 1),
+#                        ((None, nrof_neigh_per_batch, 1), 1, 2, 1)],
+#     aggregator_type=dict(
+#         type='RNNAggregator',
+#         activation='relu',
+#         cell_type='LSTMCell')
 
 # custom_aggregator=dict(
-#             type='ProteinAggregator',
-#             nrof_neigh_per_batch=10,
-#             embd_shape=[3, 5],
-#             depth=2,
-#             aggregators_shape=[(10, 2), (4, 2)],
-#             aggregator_type=dict(
-#                 type='MeanAggregator',
-#                 activation='relu')
+#                 type='ProteinAggregator',
+#                 nrof_neigh_per_batch=10,
+#                 embd_shape=[3, 1],
+#                 depth=2,
+#                 aggregators_shape=[(2, 1), (2, 1)],
+#                 aggregator_type=dict(
+#                     type='MeanAggregator',
+#                     activation='leaky_relu')
 
 # model settings
 nrof_neigh_per_batch=20
@@ -29,16 +30,24 @@ model = dict(
     out_shape=1,
     activation='sigmoid',
     custom_aggregator=dict(
-                type='ProteinAggregator',
-                nrof_neigh_per_batch=nrof_neigh_per_batch,
-                embd_shape=[3, 1],
-                depth=2,
-                aggregators_shape=[((None, nrof_neigh_per_batch, 1), 1, 2, 1),
-                                   ((None, nrof_neigh_per_batch, 1), 1, 2, 1)],
-                aggregator_type=dict(
-                    type='RNNAggregator',
-                    activation='relu',
-                    cell_type='LSTMCell')
+        type='ProteinAggregator',
+        nrof_neigh_per_batch=10,
+        embd_shape=[3, 1],
+        depth=2,
+        aggregators_shape=[(1, 1, 2, 1), (1, 1, 2, 1)],
+        attention_shapes=[(2, 1), (2, 1)],
+        aggregator_type=dict(
+            type='PoolAggregator',
+            activation='leaky_relu',
+            pool_op='reduce_max',
+            attention_layer=dict(
+                type='GATLayer',
+                attention_mechanism=dict(
+                    type='SingleLayerMechanism'
+                ),
+                activation='leaky_relu'
+            )
+        )
     ),
     loss_cls=dict(
         type='BinaryCrossEntropyLoss',
@@ -51,10 +60,9 @@ model = dict(
 )
 # model training and testing settings
 train_cfg = dict(
-    reg_loss=None,
-    # reg_loss=dict(
-    #     type='l2_loss',
-    #     weight_decay=0.0005),
+    reg_loss=dict(
+        type='l2_loss',
+        weight_decay=0.0005),
     )
 test_cfg = dict(
     aggregator_activation='relu')
@@ -99,7 +107,7 @@ lr_schedule = dict(
 optimizer = dict(
     type='GraphSAGEOptimizer',
     optimizer_cfg=dict(
-        type='SGD',
+        type='Adam',
         params=None,
         lr_schedule_type='ExponentialDecay',
         lr_schedule=lr_schedule)

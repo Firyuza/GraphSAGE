@@ -8,7 +8,8 @@ from .base import BaseGraph
 @GRAPH.register_module
 class GraphSAGE(BaseGraph):
     def __init__(self, in_shape, out_shape, activation,
-                 custom_aggregator, loss_cls, accuracy_cls,
+                 custom_aggregator,
+                 loss_cls, accuracy_cls,
                  train_cfg, test_cfg):
         super(GraphSAGE, self).__init__()
 

@@ -6,8 +6,9 @@ from ...registry import CUSTOM_AGGREGATOR
 
 @CUSTOM_AGGREGATOR.register_module
 class ProteinAggregator(BaseAggregator):
-    def __init__(self, nrof_neigh_per_batch, embd_shape, depth, aggregators_shape, aggregator_type):
-        super(ProteinAggregator, self).__init__(depth, aggregators_shape, aggregator_type)
+    def __init__(self, nrof_neigh_per_batch, embd_shape, depth, aggregators_shape, aggregator_type,
+                 attention_shapes=None):
+        super(ProteinAggregator, self).__init__(depth, aggregators_shape, aggregator_type, attention_shapes)
 
         self.embd_shape = embd_shape
         self.nrof_neigh_per_batch = nrof_neigh_per_batch
@@ -19,24 +20,12 @@ class ProteinAggregator(BaseAggregator):
             initializer=tf.keras.initializers.GlorotUniform(),
             trainable=True,
             name='node_weights')
-            # tf.Variable(tf.keras.initializers.GlorotUniform()(shape=(3, 1)),
-            #                               trainable=True,
-            #                               dtype=tf.float32)
 
         super(ProteinAggregator, self).build(input_shape)
 
     def call_train(self, graphs_nodes, graphs_adj_list, graph_sizes, labels):
         nrof_graphs = len(graphs_adj_list)
 
-        # reshaped = tf.reshape(graphs_nodes, [-1, self.embd_shape])
-        # embedded_graph_nodes = tf.reduce_sum(tf.multiply(reshaped,
-        #                                                  tf.stack([self.elem_embedding] * len(reshaped), axis=0)),
-        #                                      axis=1)
-        # embedded_graph_nodes = tf.split(embedded_graph_nodes, nrof_graphs)
-        #
-        # embedded_graph_nodes = tf.nn.sigmoid(embedded_graph_nodes)
-        #
-        # embedded_graph_nodes = tf.expand_dims(embedded_graph_nodes, axis=2)
         embedded_graph_nodes = tf.gather(self.node_embedding, graphs_nodes)
 
         batch_self_nodes = None
@@ -102,6 +91,7 @@ class ProteinAggregator(BaseAggregator):
         nrof_graphs = len(graphs_adj_list)
 
         embedded_graph_nodes = tf.gather(self.node_embedding, graphs_nodes)
+        embedded_graph_nodes = tf.nn.leaky_relu(embedded_graph_nodes)
 
         batch_self_nodes = None
         for k in range(self.depth):

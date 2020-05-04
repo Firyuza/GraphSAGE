@@ -4,6 +4,7 @@ from .aggregators import *
 from .graph import *
 from .losses import *
 from .optimizers import *
+from .attention import *
 
 __all__ = [
     'AGGREGATOR', 'GRAPH', 'LOSSES', 'OPTIMIZERS',

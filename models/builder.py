@@ -1,5 +1,6 @@
 from utils.registry import build_from_cfg
-from .registry import (GRAPH, AGGREGATOR, LOSSES, OPTIMIZERS, CUSTOM_AGGREGATOR)
+from .registry import (GRAPH, AGGREGATOR, LOSSES, OPTIMIZERS, CUSTOM_AGGREGATOR,
+                       ATTENTION_LAYER, ATTENTION_MECHANISM)
 
 
 def build(cfg, registry, default_args=None):
@@ -17,6 +18,12 @@ def build_loss(cfg):
 
 def build_optimizer(cfg):
     return build(cfg, OPTIMIZERS)
+
+def build_attention_layer(cfg):
+    return build(cfg, ATTENTION_LAYER)
+
+def build_attention_mechanism(cfg):
+    return build(cfg, ATTENTION_MECHANISM)
 
 def build_graph(cfg, train_cfg=None, test_cfg=None):
     return build(cfg, GRAPH, dict(train_cfg=train_cfg, test_cfg=test_cfg))
