@@ -5,7 +5,7 @@ from ..builder import build_attention_layer
 
 @AGGREGATOR.register_module
 class PoolAggregator(tf.keras.layers.Layer):
-    def __init__(self, activation, pool_op, attention_layer):
+    def __init__(self, activation, pool_op, attention_layer=None):
         super(PoolAggregator, self).__init__()
 
         self.activation = getattr(tf.nn, activation)

@@ -1,26 +1,47 @@
 from datetime import datetime
 
-# custom_aggregator = dict(
-#     type='ProteinAggregator',
-#     nrof_neigh_per_batch=nrof_neigh_per_batch,
-#     embd_shape=[3, 1],
-#     depth=2,
-#     aggregators_shape=[((None, nrof_neigh_per_batch, 1), 1, 2, 1),
-#                        ((None, nrof_neigh_per_batch, 1), 1, 2, 1)],
-#     aggregator_type=dict(
-#         type='RNNAggregator',
-#         activation='relu',
-#         cell_type='LSTMCell')
 
 # custom_aggregator=dict(
-#                 type='ProteinAggregator',
-#                 nrof_neigh_per_batch=10,
-#                 embd_shape=[3, 1],
-#                 depth=2,
-#                 aggregators_shape=[(2, 1), (2, 1)],
-#                 aggregator_type=dict(
-#                     type='MeanAggregator',
-#                     activation='leaky_relu')
+#         type='ProteinAggregator',
+#         nrof_neigh_per_batch=10,
+#         embd_shape=[3, 1],
+#         depth=2,
+#         aggregators_shape=[(2, 1), (2, 1)],
+#         attention_shapes=[(2, 1), (2, 1)],
+#         aggregator_type=dict(
+#             type='MeanAggregator',
+#             activation='leaky_relu',
+#             attention_layer=dict(
+#                 type='GATLayer',
+#                 attention_mechanism=dict(
+#                     type='SingleLayerMechanism'
+#                 ),
+#                 activation='leaky_relu'
+#             )
+#         )
+#     )
+
+# custom_aggregator=dict(
+#         type='ProteinAggregator',
+#         nrof_neigh_per_batch=10,
+#         embd_shape=[3, 1],
+#         depth=2,
+#         aggregators_shape=[(1, 1, 2, 1), (1, 1, 2, 1)],
+#         attention_shapes=[(2, 1), (2, 1)],
+#         aggregator_type=dict(
+#             type='PoolAggregator',
+#             activation='leaky_relu',
+#             pool_op='reduce_max',
+#             # attention_layer=None
+#             attention_layer=dict(
+#                 type='GATLayer',
+#                 attention_mechanism=dict(
+#                     type='SingleLayerMechanism'
+#                 ),
+#                 activation='leaky_relu'
+#             )
+#         )
+#     )
 
 # model settings
 nrof_neigh_per_batch=20
@@ -31,21 +52,23 @@ model = dict(
     activation='sigmoid',
     custom_aggregator=dict(
         type='ProteinAggregator',
-        nrof_neigh_per_batch=10,
+        nrof_neigh_per_batch=nrof_neigh_per_batch,
         embd_shape=[3, 1],
         depth=2,
-        aggregators_shape=[(1, 1, 2, 1), (1, 1, 2, 1)],
+        aggregators_shape=[((None, nrof_neigh_per_batch, 1), 1, 2, 1),
+                           ((None, nrof_neigh_per_batch, 1), 1, 2, 1)],
         attention_shapes=[(2, 1), (2, 1)],
         aggregator_type=dict(
-            type='PoolAggregator',
-            activation='leaky_relu',
-            pool_op='reduce_max',
+            type='RNNAggregator',
+            activation='relu',
+            cell_type='LSTMCell',
+            # attention_layer=None,
             attention_layer=dict(
                 type='GATLayer',
                 attention_mechanism=dict(
                     type='SingleLayerMechanism'
                 ),
-                activation='leaky_relu'
+                activation='sigmoid'
             )
         )
     ),

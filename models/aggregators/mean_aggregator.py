@@ -10,6 +10,7 @@ class MeanAggregator(tf.keras.layers.Layer):
 
         self.activation = getattr(tf.nn, activation)
 
+        self.attention_layer = attention_layer
         if attention_layer is not None:
             self.attention_layer = build_attention_layer(attention_layer)
 
@@ -26,6 +27,10 @@ class MeanAggregator(tf.keras.layers.Layer):
         return
 
     def call(self, self_nodes, neigh_nodes, len_adj_nodes, training=True):
+        if self.attention_layer is not None:
+            coefficients = self.attention_layer(self_nodes, neigh_nodes)
+            self_nodes = tf.nn.leaky_relu(tf.reduce_sum(tf.multiply(coefficients, neigh_nodes), axis=1))
+
         mean_neigh = tf.divide(tf.reduce_sum(neigh_nodes, axis=1), tf.expand_dims(len_adj_nodes, 1))
 
         concat = tf.concat([self_nodes, mean_neigh], axis=1)

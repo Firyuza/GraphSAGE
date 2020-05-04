@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 
 from ..builder import build_aggregator, build_attention_layer
 
-class BaseAggregator(tf.keras.models.Model, metaclass=ABCMeta):
+class BaseAggregator(tf.keras.layers.Layer, metaclass=ABCMeta):
     def __init__(self, depth, aggregators_shape, aggregator_type, attention_shapes=None):
         super(BaseAggregator, self).__init__()
 
@@ -20,7 +20,10 @@ class BaseAggregator(tf.keras.models.Model, metaclass=ABCMeta):
         self.aggregator_layers = []
         for k in range(self.depth):
             aggregator = build_aggregator(self.aggregator_type)
-            aggregator.build(*self.aggregators_shape[k], *self.attention_shapes[k])
+            if self.attention_shapes is not None:
+                aggregator.build(*self.aggregators_shape[k], *self.attention_shapes[k])
+            else:
+                aggregator.build(*self.aggregators_shape[k])
 
             self.aggregator_layers.append(aggregator)
 
