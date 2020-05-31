@@ -3,6 +3,10 @@ import tensorflow as tf
 import scipy.io
 
 from tqdm import tqdm
+from joblib import Parallel, delayed
+import multiprocessing
+
+from numba import njit, prange, jit
 
 from .custom import CustomDataset
 from .registry import DATASETS
@@ -70,7 +74,7 @@ class ProteinDataset(CustomDataset):
 
         return rnd_graph_indices
 
-    def __py_func_map(self, graph_id):
+    def __py_func_map2(self, graph_id):
         diff = self.data_infos['max_nrof_nodes'] - len(self.data_infos['Nodes'][graph_id])
         if diff > 0:
             # vertices = np.concatenate([self.data_infos['Nodes'][graph_id],
@@ -87,9 +91,67 @@ class ProteinDataset(CustomDataset):
         return np.asarray(vertices, np.int32), np.asarray(full_adj_list, np.float32), \
                self.data_infos['graph_size'][graph_id], self.data_infos['Labels'][graph_id]
 
+
+    def __py_func_map(self, graph_id):
+
+        def generate_neighbours(graphs_adj_list, graph_size, depth, nrof_neigh_per_batch):
+            all_rnd_indices = []
+            all_rnd_adj_mask = []
+            all_len_adj_nodes = []
+
+            for _ in range(depth):
+                rnd_indices = []
+                rnd_adj_mask = []
+                len_adj_nodes = []
+                for i_v in range(graph_size):
+                    rnd_adj_nodes_indices = np.random.choice(
+                        np.arange(graph_size),
+                        nrof_neigh_per_batch)
+                    rnd_adj_nodes = graphs_adj_list[i_v][rnd_adj_nodes_indices]
+                    rnd_indices.append(rnd_adj_nodes_indices)
+
+                    nrof_adj = len(np.where(rnd_adj_nodes != 0)[0])
+                    len_adj_nodes.append(nrof_adj if nrof_adj > 0 else 3e-5)
+
+                    rnd_adj_mask.append(rnd_adj_nodes)
+
+                all_rnd_indices.append(rnd_indices)
+                all_rnd_adj_mask.append(rnd_adj_mask)
+                all_len_adj_nodes.append(len_adj_nodes)
+
+            return all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes
+
+        graph_size = self.data_infos['graph_size'][graph_id]
+        graphs_adj_list = self.data_infos['Adj_list'][graph_id]
+
+        diff = self.data_infos['max_nrof_nodes'] - len(self.data_infos['Nodes'][graph_id])
+        if diff > 0:
+            vertices = np.concatenate([self.data_infos['Nodes'][graph_id],
+                                       np.zeros((diff), dtype=np.int32)], axis=0)
+        else:
+            vertices = self.data_infos['Nodes'][graph_id]
+
+        all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes = generate_neighbours(graphs_adj_list, graph_size,
+                                                                                   self.depth, self.nrof_neigh_per_batch)
+        for i in range(self.depth):
+            if diff > 0:
+                all_rnd_indices[i] = np.concatenate([all_rnd_indices[i],
+                                              np.zeros((diff, self.nrof_neigh_per_batch), dtype=np.int32)], axis=0)
+                all_rnd_adj_mask[i] = np.concatenate([all_rnd_adj_mask[i],
+                                               np.zeros((diff, self.nrof_neigh_per_batch), dtype=np.int32)],
+                                              axis=0)
+                all_len_adj_nodes[i] = np.concatenate([all_len_adj_nodes[i],
+                                                np.zeros((diff), dtype=np.int32)], axis=0)
+
+        return np.asarray(vertices, np.int32), self.data_infos['graph_size'][graph_id], \
+               self.data_infos['Labels'][graph_id], \
+               np.asarray(all_rnd_indices, dtype=np.int32), np.asarray(all_rnd_adj_mask, dtype=np.float32), \
+               np.asarray(all_len_adj_nodes, dtype=np.float32)
+
     def prepare_train_data(self, graph_id):
         return tf.py_function(self.__py_func_map,[graph_id],
-                              [tf.int32, tf.float32, tf.int32, tf.int32])
+                              [tf.int32, tf.int32, tf.int32,
+                               tf.int32, tf.float32, tf.float32])
 
     def prepare_test_data(self, graph_id):
         return

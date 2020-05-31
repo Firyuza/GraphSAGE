@@ -16,7 +16,7 @@ print("GPU Available: ", tf.test.is_gpu_available())
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
-    parser.add_argument('--config', default='/home/firiuza/PycharmProjects/GraphSAGE/configs/graphSAGE_config.py',
+    parser.add_argument('--config', default='/home/firiuza/PycharmProjects/GraphSAGE/configs/graphSAGE_ppi_config.py',
                         help='train config file path')
     parser.add_argument('--work_dir', default='', help='the dir to save logs and models')
     parser.add_argument(

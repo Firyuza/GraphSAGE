@@ -110,6 +110,7 @@ class Runner(object):
         if create_symlink:
             mmcv.symlink(filename, osp.join(out_dir, 'latest.pth'))
 
+    # @tf.function
     def train(self, data_loader, **kwargs):
         self.mode = 'train'
         self.data_loader = data_loader

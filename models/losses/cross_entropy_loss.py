@@ -18,6 +18,6 @@ class BinaryCrossEntropyLoss(tf.keras.losses.Loss):
 
     def call(self, labels, preds):
         loss_cls = self.loss_weight * \
-                   self.cls_criterion( labels, preds)
+                   self.cls_criterion(labels, preds)
 
         return loss_cls

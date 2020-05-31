@@ -14,11 +14,16 @@ class CustomDataset:
                  dataset_name,
                  ann_file,
                  data_root=None,
-                 test_mode=False):
+                 test_mode=False,
+                 depth=2,
+                 nrof_neigh_per_batch=10):
         self.ann_file = ann_file
         self.data_root = data_root
         self.test_mode = test_mode
         self.dataset_name = dataset_name
+
+        self.depth = depth
+        self.nrof_neigh_per_batch = nrof_neigh_per_batch
 
         # join paths if data_root is specified
         if self.data_root is not None:

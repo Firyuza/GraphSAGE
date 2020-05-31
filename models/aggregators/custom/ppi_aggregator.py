@@ -5,29 +5,20 @@ from ..base_aggregator import BaseAggregator
 from ...registry import CUSTOM_AGGREGATOR
 
 @CUSTOM_AGGREGATOR.register_module
-class ProteinAggregator(BaseAggregator):
-    def __init__(self, nrof_neigh_per_batch, embd_shape, depth, aggregators_shape, aggregator_type,
+class PPIAggregator(BaseAggregator):
+    def __init__(self, nrof_neigh_per_batch, depth, aggregators_shape, aggregator_type,
                  attention_shapes=None):
-        super(ProteinAggregator, self).__init__(depth, aggregators_shape, aggregator_type, attention_shapes)
+        super(PPIAggregator, self).__init__(depth, aggregators_shape, aggregator_type, attention_shapes)
 
-        self.embd_shape = embd_shape
         self.nrof_neigh_per_batch = nrof_neigh_per_batch
 
     def build(self, input_shape):
-        self.node_embedding = self.add_weight(
-            shape=self.embd_shape,
-            dtype=tf.float32,
-            initializer=tf.keras.initializers.GlorotUniform(),
-            trainable=True,
-            name='node_weights')
 
-        super(ProteinAggregator, self).build(input_shape)
+        super(PPIAggregator, self).build(input_shape)
 
-    def call_train(self, graphs_nodes, graph_sizes, labels,
+    def call_train(self, embedded_graph_nodes, graph_sizes, labels,
                     all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes):
         nrof_graphs = len(graph_sizes)
-
-        embedded_graph_nodes = tf.gather(self.node_embedding, graphs_nodes)
 
         batch_self_nodes = None
         for k in range(self.depth):
@@ -55,18 +46,9 @@ class ProteinAggregator(BaseAggregator):
             updated_graph_nodes = self.aggregator_layers[k](batch_self_nodes if k == 0 else updated_graph_nodes,
                                                             batch_graphs_nodes, len_adj_nodes_per_graph)
 
-        entire_batch_graphs = None
-        for g_i in range(nrof_graphs):
-            embedded_graph = tf.gather(updated_graph_nodes,
-                                       tf.range(sum(graph_sizes[:g_i]),
-                                                sum(graph_sizes[: (g_i + 1)])))
-            embedded_graph = tf.expand_dims(tf.reduce_mean(embedded_graph, axis=0), 0)
-            if entire_batch_graphs is None:
-                entire_batch_graphs = embedded_graph
-            else:
-                entire_batch_graphs = tf.concat([entire_batch_graphs, embedded_graph], axis=0)
+        updated_graph_nodes = tf.math.l2_normalize(updated_graph_nodes, axis=1)
 
-        return entire_batch_graphs
+        return updated_graph_nodes
 
     def call_test(self, graphs_nodes, graphs_adj_list, graph_sizes, labels=None):
         nrof_graphs = len(graphs_adj_list)
