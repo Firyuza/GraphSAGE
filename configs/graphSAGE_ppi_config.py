@@ -42,7 +42,7 @@ from datetime import datetime
 
 
 # model settings
-nrof_neigh_per_batch=10
+nrof_neigh_per_batch=25
 depth=2
 num_classes = 121
 
@@ -62,14 +62,14 @@ model = dict(
             type='RNNAggregator',
             activation='relu',
             cell_type='LSTMCell',
-            # attention_layer=None,
-            attention_layer=dict(
-                type='GATLayer',
-                attention_mechanism=dict(
-                    type='SingleLayerMechanism'
-                ),
-                activation='sigmoid'
-            )
+            attention_layer=None
+            # attention_layer=dict(
+            #     type='GATLayer',
+            #     attention_mechanism=dict(
+            #         type='SingleLayerMechanism'
+            #     ),
+            #     activation='sigmoid'
+            # )
         )
     ),
     loss_cls=dict(
@@ -144,7 +144,7 @@ use_TensorBoard=True
 
 # yapf:enable
 # runtime settings
-total_epochs = 50
+total_epochs = 500
 
 log_level = 'INFO'
 work_dir = '/home/firiuza/PycharmProjects/GraphSAGE/run_models/run_ppi_%s_%s' % (model['custom_aggregator']['aggregator_type']['type'],
@@ -152,4 +152,4 @@ work_dir = '/home/firiuza/PycharmProjects/GraphSAGE/run_models/run_ppi_%s_%s' % 
 
 restore_model_path = None
 
-workflow = [('train', 50)]#, ('valid', 1)]
+workflow = [('train', 1), ('valid', 1)]

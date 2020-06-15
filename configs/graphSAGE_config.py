@@ -144,7 +144,7 @@ use_TensorBoard=True
 
 # yapf:enable
 # runtime settings
-total_epochs = 2
+total_epochs = 3
 
 log_level = 'INFO'
 work_dir = '/home/firiuza/PycharmProjects/GraphSAGE/run_models/run_%s_%s' % (model['custom_aggregator']['aggregator_type']['type'],

@@ -154,4 +154,6 @@ class PPIDataset(CustomDataset):
                                tf.int32, tf.float32, tf.float32])
 
     def prepare_test_data(self, graph_id):
-        return
+        return tf.py_function(self.__py_func_map, [graph_id],
+                              [tf.float32, tf.int32, tf.int32,
+                               tf.int32, tf.float32, tf.float32])
