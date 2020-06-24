@@ -67,10 +67,12 @@ model = dict(
             activation='leaky_relu',
             attention_layer=dict(
                 type='GATLayer',
+                attention_heads=1,
                 attention_mechanism=dict(
                     type='SingleLayerMechanism'
                 ),
-                activation='leaky_relu'
+                activation='leaky_relu',
+                output_activation='sigmoid'
             )
         )
     ),

@@ -16,18 +16,21 @@ class RNNAggregator(tf.keras.layers.Layer):
             self.attention_layer = build_attention_layer(attention_layer)
 
     def build(self, input_shape_cell, cell_units, input_shape_dense, output_shape_dense,
-              attention_in_shape=None, attention_out_shape=None):
+              attention_in_shape=None, attention_shared_out_shape=None, attention_out_shape=None):
         self.cell = tf.keras.layers.RNN(
             getattr(tf.keras.layers, self.cell_type)(cell_units),
             input_shape=input_shape_cell)
         self.cell.build(input_shape_cell)
 
         self.dense_out = tf.keras.layers.Dense(output_shape_dense, input_shape=(input_shape_dense,),
-                                               name='layer_dense', activation=self.activation)
+                                               name='layer_dense', activation=None)
         self.dense_out.build((input_shape_dense,))
 
+        self.bn = tf.keras.layers.BatchNormalization()
+        self.bn.build((None, output_shape_dense))
+
         if self.attention_layer is not None:
-            self.attention_layer.build(attention_in_shape, attention_out_shape)
+            self.attention_layer.build(attention_in_shape, attention_shared_out_shape, attention_out_shape)
 
         super(RNNAggregator, self).build(())
 
@@ -35,13 +38,14 @@ class RNNAggregator(tf.keras.layers.Layer):
 
     def call(self, self_nodes, neigh_nodes, len_adj_nodes, training=True):
         if self.attention_layer is not None:
-            coefficients = self.attention_layer(self_nodes, neigh_nodes)
-            self_nodes = tf.nn.leaky_relu(tf.reduce_sum(tf.multiply(coefficients, neigh_nodes), axis=1))
+            self_nodes = self.attention_layer(self_nodes, neigh_nodes, training)
 
         neigh_cell = self.cell(neigh_nodes)
 
         concat = tf.concat([self_nodes, neigh_cell], axis=1)
 
         output = self.dense_out(concat)
+        output = self.bn(output, training=training)
+        output = self.activation(output)
 
         return output

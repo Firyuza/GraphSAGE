@@ -130,5 +130,5 @@ class ProteinAggregator(BaseAggregator):
                 entire_batch_graphs = embedded_graph
             else:
                 entire_batch_graphs = tf.concat([entire_batch_graphs, embedded_graph], axis=0)
-
+            
         return entire_batch_graphs

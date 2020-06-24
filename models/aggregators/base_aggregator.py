@@ -21,7 +21,10 @@ class BaseAggregator(tf.keras.layers.Layer, metaclass=ABCMeta):
         for k in range(self.depth):
             aggregator = build_aggregator(self.aggregator_type)
             if self.attention_shapes is not None:
-                aggregator.build(*self.aggregators_shape[k], *self.attention_shapes[k])
+                if self.aggregators_shape is not None:
+                    aggregator.build(*self.aggregators_shape[k], *self.attention_shapes[k])
+                else:
+                    aggregator.build(*self.attention_shapes[k])
             else:
                 aggregator.build(*self.aggregators_shape[k])
 

@@ -1,49 +1,5 @@
 from datetime import datetime
 
-# custom_aggregator=dict(
-#         type='PPIAggregator',
-#         nrof_neigh_per_batch=nrof_neigh_per_batch,
-#         depth=2,
-#         aggregators_shape=[((None, nrof_neigh_per_batch, 50), 50, 100, 50),
-#                            ((None, nrof_neigh_per_batch, 50), 50, 100, 50)],
-#         attention_shapes=[(50, 50, 1), (50, 50, 1)],
-#         aggregator_type=dict(
-#             type='RNNAggregator',
-#             activation='relu',
-#             cell_type='LSTMCell',
-#             # attention_layer=None
-#             attention_layer=dict(
-#                 type='GATLayer',
-#                 attention_mechanism=dict(
-#                     type='SingleLayerMechanism'
-#                 ),
-#                 activation='sigmoid'
-#             )
-#         )
-#     )
-
-# custom_aggregator=dict(
-#         type='PPIAggregator',
-#         nrof_neigh_per_batch=10,
-#         depth=2,
-#         aggregators_shape=[(50, 50, 100, 50), (50, 50, 100, 50)],
-#         attention_shapes=[(100, 1), (100, 1)],
-#         aggregator_type=dict(
-#             type='PoolAggregator',
-#             activation='leaky_relu',
-#             pool_op='reduce_max',
-#             # attention_layer=None
-#             attention_layer=dict(
-#                 type='GATLayer',
-#                 attention_mechanism=dict(
-#                     type='SingleLayerMechanism'
-#                 ),
-#                 activation='leaky_relu'
-#             )
-#         )
-#     )
-
-
 # model settings
 nrof_neigh_per_batch=5
 depth=2
@@ -51,21 +7,21 @@ num_classes = 121
 
 model = dict(
     type='GraphSAGE',
-    in_shape=50,
+    in_shape=200,
     out_shape=num_classes,
     activation='sigmoid',
     custom_aggregator=dict(
         type='PPIAggregator',
         nrof_neigh_per_batch=nrof_neigh_per_batch,
         depth=depth,
-        aggregators_shape=[(100, 50), (100, 50)],
-        attention_shapes=[(50, 50, 1), (50, 50, 1)],
+        aggregators_shape=None,
+        attention_shapes=[(50, 50, 1), (200, 50, 1)],
         aggregator_type=dict(
-            type='MeanAggregator',
+            type='GATAggregator',
             activation='leaky_relu',
             attention_layer=dict(
                 type='GATLayer',
-                attention_heads=1,
+                attention_heads=4,
                 attention_mechanism=dict(
                     type='SingleLayerMechanism'
                 ),

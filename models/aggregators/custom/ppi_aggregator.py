@@ -45,7 +45,7 @@ class PPIAggregator(BaseAggregator):
             [len_adj_nodes_per_graph.extend(len_adj[:graph_sizes[len_i]])
              for len_i, len_adj in enumerate(all_len_adj_nodes[:, k, :])]
             updated_graph_nodes = self.aggregator_layers[k](batch_self_nodes if k == 0 else updated_graph_nodes,
-                                                            batch_graphs_nodes, len_adj_nodes_per_graph)
+                                                            batch_graphs_nodes, len_adj_nodes_per_graph, training=True)
 
         updated_graph_nodes = tf.math.l2_normalize(updated_graph_nodes, axis=1)
 
@@ -80,7 +80,7 @@ class PPIAggregator(BaseAggregator):
             [len_adj_nodes_per_graph.extend(len_adj[:graph_sizes[len_i]])
              for len_i, len_adj in enumerate(all_len_adj_nodes[:, k, :])]
             updated_graph_nodes = self.aggregator_layers[k](batch_self_nodes if k == 0 else updated_graph_nodes,
-                                                            batch_graphs_nodes, len_adj_nodes_per_graph)
+                                                            batch_graphs_nodes, len_adj_nodes_per_graph, training=False)
 
         updated_graph_nodes = tf.math.l2_normalize(updated_graph_nodes, axis=1)
 

@@ -16,17 +16,22 @@ class PoolAggregator(tf.keras.layers.Layer):
             self.attention_layer = build_attention_layer(attention_layer)
 
     def build(self, input_shape, transform_output_shape, dense_input_shape, output_shape=1,
-              attention_in_shape=None, attention_out_shape=None):
+              attention_in_shape=None, attention_shared_out_shape=None, attention_out_shape=None):
         self.transform_node_weight = tf.keras.layers.Dense(transform_output_shape, input_shape=(input_shape,),
                                            name='transform_node_weight', activation=None)
         self.transform_node_weight.build((input_shape, ))
 
+        self.bn1 = tf.keras.layers.BatchNormalization()
+        self.bn1.build((None, transform_output_shape))
+
         self.dense_out = tf.keras.layers.Dense(output_shape, input_shape=(dense_input_shape,),
-                                           name='layer_dense', activation=self.activation)
+                                           name='layer_dense', activation=None)
         self.dense_out.build((dense_input_shape,))
+        self.bn2 = tf.keras.layers.BatchNormalization()
+        self.bn2.build((None, output_shape))
 
         if self.attention_layer is not None:
-            self.attention_layer.build(attention_in_shape, attention_out_shape)
+            self.attention_layer.build(attention_in_shape, attention_shared_out_shape, attention_out_shape)
 
         super(PoolAggregator, self).build(())
 
@@ -34,15 +39,17 @@ class PoolAggregator(tf.keras.layers.Layer):
 
     def call(self, self_nodes, neigh_nodes, len_adj_nodes, training=True):
         if self.attention_layer is not None:
-            coefficients = self.attention_layer(self_nodes, neigh_nodes)
-            self_nodes = tf.nn.leaky_relu(tf.reduce_sum(tf.multiply(coefficients, neigh_nodes), axis=1))
+            self_nodes = self.attention_layer(self_nodes, neigh_nodes, training)
 
         neigh = self.transform_node_weight(neigh_nodes)
+        neigh = self.bn1(neigh, training=training)
         neigh = getattr(tf, self.pool_op)(neigh, axis=1)
 
         concat = tf.concat([self_nodes, neigh], axis=1)
         concat = self.activation(concat)
 
         output = self.dense_out(concat)
+        output = self.bn2(output, training=training)
+        output = self.activation(output)
 
         return output

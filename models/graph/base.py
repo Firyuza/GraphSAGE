@@ -41,7 +41,7 @@ class BaseGraph(tf.keras.models.Model, metaclass=ABCMeta):
         return
 
     @abstractmethod
-    def call_train(self, *args):
+    def call_train(self, *args, training):
         """
 
         :param graph_nodes:
