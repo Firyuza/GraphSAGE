@@ -5,11 +5,12 @@ from ..builder import build_attention_layer
 
 @AGGREGATOR.register_module
 class RNNAggregator(tf.keras.layers.Layer):
-    def __init__(self, cell_type, activation, attention_layer=None):
+    def __init__(self, cell_type, activation, use_concat, attention_layer=None):
         super(RNNAggregator, self).__init__()
 
         self.activation = getattr(tf.nn, activation)
         self.cell_type = cell_type
+        self.use_concat = use_concat
 
         self.attention_layer = attention_layer
         if attention_layer is not None:
@@ -22,12 +23,19 @@ class RNNAggregator(tf.keras.layers.Layer):
             input_shape=input_shape_cell)
         self.cell.build(input_shape_cell)
 
-        self.dense_out = tf.keras.layers.Dense(output_shape_dense, input_shape=(input_shape_dense,),
-                                               name='layer_dense', activation=None)
-        self.dense_out.build((input_shape_dense,))
+        self.self_dense = tf.keras.layers.Dense(output_shape_dense, input_shape=(input_shape_dense,),
+                                               name='self_dense', activation=None, use_bias=False)
+        self.self_dense.build((input_shape_dense,))
+
+        self.neigh_dense = tf.keras.layers.Dense(output_shape_dense, input_shape=(input_shape_dense,),
+                                                name='neigh_dense', activation=None, use_bias=False)
+        self.neigh_dense.build((input_shape_dense,))
 
         self.bn = tf.keras.layers.BatchNormalization()
-        self.bn.build((None, output_shape_dense))
+        if self.use_concat:
+            self.bn.build((None, 2 * output_shape_dense))
+        else:
+            self.bn.build((None, output_shape_dense))
 
         if self.attention_layer is not None:
             self.attention_layer.build(attention_in_shape, attention_shared_out_shape, attention_out_shape)
@@ -42,9 +50,14 @@ class RNNAggregator(tf.keras.layers.Layer):
 
         neigh_cell = self.cell(neigh_nodes)
 
-        concat = tf.concat([self_nodes, neigh_cell], axis=1)
+        self_nodes = self.self_dense(self_nodes)
+        neigh_cell = self.neigh_dense(neigh_cell)
 
-        output = self.dense_out(concat)
+        if self.use_concat:
+            output = tf.concat([self_nodes, neigh_cell], axis=1)
+        else:
+            output = tf.add_n([self_nodes, neigh_cell])
+
         output = self.bn(output, training=training)
         output = self.activation(output)
 

@@ -1,5 +1,6 @@
 import logging
 import os.path as osp
+import os
 import time
 import tensorflow as tf
 
@@ -85,30 +86,23 @@ class Runner(object):
         """int: Maximum training iterations."""
         return self._max_iters
 
-    def load_checkpoint(self, filename, map_location='cpu', strict=False):
+    def load_checkpoint(self, filename):
         self.logger.info('load checkpoint from %s', filename)
-        return load_checkpoint(self.model, filename, map_location, strict,
-                               self.logger)
+        self.model = tf.saved_model.load(filename)
 
-    def save_checkpoint(self,
-                        out_dir,
-                        filename_tmpl='epoch_{}.pth',
-                        save_optimizer=True,
-                        meta=None,
-                        create_symlink=True):
-        if meta is None:
-            meta = dict(epoch=self.epoch + 1, iter=self.iter)
-        else:
-            meta.update(epoch=self.epoch + 1, iter=self.iter)
+        return
 
-        filename = filename_tmpl.format(self.epoch + 1)
-        filepath = osp.join(out_dir, filename)
-        optimizer = self.optimizer if save_optimizer else None
-        save_checkpoint(self.model, filepath, optimizer=optimizer, meta=meta)
-        # in some environments, `os.symlink` is not supported, you may need to
-        # set `create_symlink` to False
-        if create_symlink:
-            mmcv.symlink(filename, osp.join(out_dir, 'latest.pth'))
+    def save_checkpoint(self, out_dir, filename_tmpl='step_{}'):
+        filename = filename_tmpl.format(self.iter)
+        filepath = osp.join(out_dir, 'models')
+        if not os.path.exists(filepath):
+            os.makedirs(filepath)
+        filepath = osp.join(filepath, filename)
+        # optimizer = self.optimizer if save_optimizer else None
+
+        tf.saved_model.save(self.model, filepath)
+
+        return
 
     # @tf.function
     def train(self, data_loader, **kwargs):
@@ -131,6 +125,7 @@ class Runner(object):
             self.callback.after_train_step(tape, outputs['total_loss'], outputs, self.step, self.mode)
             self.step += 1
 
+        self.save_checkpoint(self.work_dir)
         self.callback.after_train_epoch()
         self._epoch += 1
 
@@ -145,7 +140,7 @@ class Runner(object):
             self._inner_iter = i
             self.callback.before_valid_step()
 
-            outputs = self.batch_processor(self.model, data_batch, train_mode=False, **kwargs)
+            outputs = self.batch_processor(self.model, data_batch, train_mode=False)
             if not isinstance(outputs, dict):
                 raise TypeError('batch_processor() must return a dict')
             self.outputs = outputs
@@ -183,7 +178,6 @@ class Runner(object):
                         return
                     epoch_runner(data_loaders[i], **kwargs)
 
-        time.sleep(1)  # wait for some hooks like loggers to finish
-        # self.call_hook('after_run')
+        time.sleep(1)
 
         return

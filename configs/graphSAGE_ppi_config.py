@@ -1,77 +1,130 @@
 from datetime import datetime
 
+
 # custom_aggregator=dict(
 #         type='PPIAggregator',
 #         nrof_neigh_per_batch=nrof_neigh_per_batch,
-#         depth=2,
-#         aggregators_shape=[((None, nrof_neigh_per_batch, 50), 50, 100, 50),
-#                            ((None, nrof_neigh_per_batch, 50), 50, 100, 50)],
+#         depth=depth,
+#         aggregators_shape=[(100, 50), (100, 50)],
 #         attention_shapes=[(50, 50, 1), (50, 50, 1)],
 #         aggregator_type=dict(
-#             type='RNNAggregator',
-#             activation='relu',
-#             cell_type='LSTMCell',
-#             # attention_layer=None
-#             attention_layer=dict(
-#                 type='GATLayer',
-#                 attention_mechanism=dict(
-#                     type='SingleLayerMechanism'
-#                 ),
-#                 activation='sigmoid'
-#             )
+#             type='MeanAggregator',
+#             activation='leaky_relu',
+#             attention_layer=None
+#             # attention_layer=dict(
+#             #     type='GATLayer',
+#             #     attention_heads=1,
+#             #     attention_mechanism=dict(
+#             #         type='SingleLayerMechanism'
+#             #     ),
+#             #     activation='leaky_relu',
+#             #     output_activation='sigmoid'
+#             # )
 #         )
 #     )
 
 # custom_aggregator=dict(
 #         type='PPIAggregator',
-#         nrof_neigh_per_batch=10,
-#         depth=2,
+#         nrof_neigh_per_batch=nrof_neigh_per_batch,
+#         depth=depth,
+#         aggregators_shape=[(50, 50), (100, 50)],
+#         attention_shapes=[(50, 50, 1), (50, 50, 1)],
+#         aggregator_type=dict(
+#             type='MeanAggregator',
+#             activation='leaky_relu',
+#             attention_layer=None
+#             # attention_layer=dict(
+#             #     type='GATLayer',
+#             #     attention_heads=1,
+#             #     attention_mechanism=dict(
+#             #         type='SingleLayerMechanism'
+#             #     ),
+#             #     activation='leaky_relu',
+#             #     output_activation='sigmoid'
+#             # )
+#         )
+#     )
+
+# custom_aggregator=dict(
+#         type='PPIAggregator',
+#         nrof_neigh_per_batch=nrof_neigh_per_batch,
+#         depth=depth,
 #         aggregators_shape=[(50, 50, 100, 50), (50, 50, 100, 50)],
-#         attention_shapes=[(100, 1), (100, 1)],
+#         attention_shapes=[(50, 50, 1), (50, 50, 1)],
 #         aggregator_type=dict(
 #             type='PoolAggregator',
 #             activation='leaky_relu',
 #             pool_op='reduce_max',
-#             # attention_layer=None
-#             attention_layer=dict(
-#                 type='GATLayer',
-#                 attention_mechanism=dict(
-#                     type='SingleLayerMechanism'
-#                 ),
-#                 activation='leaky_relu'
-#             )
+#             attention_layer=None
+#             # attention_layer=dict(
+#             #     type='GATLayer',
+#             #     attention_heads=1,
+#             #     attention_mechanism=dict(
+#             #         type='SingleLayerMechanism'
+#             #     ),
+#             #     activation='leaky_relu',
+#             #     output_activation='sigmoid'
+#             # )
+#         )
+#     )
+
+# custom_aggregator=dict(
+#         type='PPIAggregator',
+#         nrof_neigh_per_batch=nrof_neigh_per_batch,
+#         depth=depth,
+#         aggregators_shape=[(50, 50, 100, 50), (100, 50, 100, 50)],
+#         attention_shapes=[(50, 50, 1), (50, 50, 1)],
+#         aggregator_type=dict(
+#             type='PoolAggregator',
+#             activation='leaky_relu',
+#             pool_op='reduce_max',
+#             use_concat=True,
+#             attention_layer=None
+#             # attention_layer=dict(
+#             #     type='GATLayer',
+#             #     attention_heads=1,
+#             #     attention_mechanism=dict(
+#             #         type='SingleLayerMechanism'
+#             #     ),
+#             #     activation='leaky_relu',
+#             #     output_activation='sigmoid'
+#             # )
 #         )
 #     )
 
 
 # model settings
-nrof_neigh_per_batch=5
+nrof_neigh_per_batch=25
 depth=2
 num_classes = 121
 
 model = dict(
     type='GraphSAGE',
-    in_shape=50,
+    in_shape=100,
     out_shape=num_classes,
     activation='sigmoid',
-    custom_aggregator=dict(
+    aggregator_layers=dict(
         type='PPIAggregator',
         nrof_neigh_per_batch=nrof_neigh_per_batch,
         depth=depth,
-        aggregators_shape=[(100, 50), (100, 50)],
+        aggregators_shape=[((None, nrof_neigh_per_batch, 50), 50, 50, 50),
+                           ((None, nrof_neigh_per_batch, 100), 100, 100, 50)],
         attention_shapes=[(50, 50, 1), (50, 50, 1)],
         aggregator_type=dict(
-            type='MeanAggregator',
-            activation='leaky_relu',
-            attention_layer=dict(
-                type='GATLayer',
-                attention_heads=1,
-                attention_mechanism=dict(
-                    type='SingleLayerMechanism'
-                ),
-                activation='leaky_relu',
-                output_activation='sigmoid'
-            )
+            type='RNNAggregator',
+            activation='relu',
+            cell_type='LSTMCell',
+            use_concat=True,
+            attention_layer=None
+            # attention_layer=dict(
+            #     type='GATLayer',
+            #     attention_heads=1,
+            #     attention_mechanism=dict(
+            #         type='SingleLayerMechanism'
+            #     ),
+            #     activation='sigmoid',
+            #     output_activation='sigmoid'
+            # )
         )
     ),
     loss_cls=dict(
@@ -84,6 +137,23 @@ model = dict(
         threshold=0.5
     )
 )
+
+# learning policy
+lr_schedule = dict(
+    initial_learning_rate=5e-3,
+    decay_steps=1000,
+    decay_rate=0.99,
+    staircase=True)
+# optimizer
+optimizer = dict(
+    type='GraphSAGEOptimizer',
+    optimizer_cfg=dict(
+        type='Adam',
+        params=None,
+        lr_schedule_type='ExponentialDecay',
+        lr_schedule=lr_schedule)
+)
+
 # model training and testing settings
 train_cfg = dict(
     reg_loss=dict(
@@ -93,6 +163,7 @@ train_cfg = dict(
 test_cfg = dict(
     aggregator_activation='relu')
 
+# dataset
 dataset_type = 'PPIDataset'
 data_root = '/home/firiuza/MachineLearning/ppi/'
 data = dict(
@@ -126,27 +197,10 @@ data_loader = dict(
             map_func_name='prepare_train_data'
         )
 )
-# learning policy
-lr_schedule = dict(
-    initial_learning_rate=5e-4,
-    decay_steps=1000,
-    decay_rate=0.99,
-    staircase=True)
-# optimizer
-optimizer = dict(
-    type='GraphSAGEOptimizer',
-    optimizer_cfg=dict(
-        type='Adam',
-        params=None,
-        lr_schedule_type='ExponentialDecay',
-        lr_schedule=lr_schedule)
-)
-
-use_TensorBoard=True
 
 # yapf:enable
 # runtime settings
-total_epochs = 500
+total_epochs = 5000
 
 log_level = 'INFO'
 work_dir = '/home/firiuza/PycharmProjects/GraphSAGE/run_models/run_ppi_%s_%s' % (model['custom_aggregator']['aggregator_type']['type'],

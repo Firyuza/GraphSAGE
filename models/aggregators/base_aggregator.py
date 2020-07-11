@@ -42,8 +42,8 @@ class BaseAggregator(tf.keras.layers.Layer, metaclass=ABCMeta):
     def call_test(self, *args):
         return
 
-    def call(self, *args, training=True):
-        if training:
+    def call(self, *args, train_mode=True):
+        if train_mode:
             return self.call_train(*args)
         else:
             return self.call_test(*args)

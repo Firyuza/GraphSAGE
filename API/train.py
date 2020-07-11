@@ -48,8 +48,7 @@ def batch_processor(model, data, train_mode):
     :param train_mode:
     :return:
     """
-
-    results = model(*data, training=train_mode)
+    results = model(*data, train_mode=train_mode)
 
     print_str = ''
     for key, value in results.items():
@@ -94,19 +93,5 @@ def train_model(model,
         model, batch_processor, optimizer, cfg.work_dir, logger=logger)
     # an ugly walkaround to make the .log and .log.json filenames the same
     runner.timestamp = timestamp
-    # # fp16 setting
-    # fp16_cfg = cfg.get('fp16', None)
-    # if fp16_cfg is not None:
-    #     optimizer_config = Fp16OptimizerHook(
-    #         **cfg.optimizer_config, **fp16_cfg, distributed=False)
-    # else:
-    #     optimizer_config = cfg.optimizer_config
-    # runner.register_training_hooks(cfg.lr_config, optimizer_config,
-    #                                cfg.checkpoint_config, cfg.log_config)
-    #
-    # if cfg.resume_from:
-    #     runner.resume(cfg.resume_from)
-    # elif cfg.load_from:
-    #     runner.load_checkpoint(cfg.load_from)
 
     runner.run(data_loaders, cfg.workflow, cfg.total_epochs)

@@ -15,7 +15,7 @@ from .registry import DATASETS
 class ProteinDataset(CustomDataset):
 
     def load_annotations(self, ann_file):
-        mat = scipy.io.loadmat(ann_file)  # 'datasets/%s.mat' % dataset_name)
+        mat = scipy.io.loadmat(ann_file)
 
         input = mat[self.dataset_name]
         labels = mat['l' +self. dataset_name.lower()]
@@ -27,7 +27,6 @@ class ProteinDataset(CustomDataset):
         for i in range(node_labels.shape[1]):
             v_labels = max(v_labels, max(node_labels[0, i]['values'][0, 0])[0])
 
-        e_labels = 1
         # For each sample
         samples_V = []
         samples_A = []
@@ -39,9 +38,6 @@ class ProteinDataset(CustomDataset):
             no_nodes = node_labels[0, i]['values'][0, 0].shape[0]
             max_no_nodes = max(max_no_nodes, no_nodes)
             graph_sizes.append(no_nodes)
-            # V = np.ones([no_nodes, v_labels])
-            # for l in range(v_labels):
-            #     V[..., l] = np.equal(node_labels[0, i]['values'][0, 0][..., 0], l + 1).astype(np.float32)
             V = node_labels[0, i]['values'][0, 0][..., 0] - 1
             samples_V.append(V)
             A = np.zeros([no_nodes, no_nodes])
@@ -73,24 +69,6 @@ class ProteinDataset(CustomDataset):
         rnd_graph_indices = np.random.permutation(len(self.data_infos['Nodes']))
 
         return rnd_graph_indices
-
-    def __py_func_map2(self, graph_id):
-        diff = self.data_infos['max_nrof_nodes'] - len(self.data_infos['Nodes'][graph_id])
-        if diff > 0:
-            # vertices = np.concatenate([self.data_infos['Nodes'][graph_id],
-            #                            np.zeros((diff, 3))], axis=0)
-            vertices = np.concatenate([self.data_infos['Nodes'][graph_id],
-                                       np.zeros((diff), dtype=np.int32)], axis=0)
-            right = np.concatenate([self.data_infos['Adj_list'][graph_id],
-                                    np.zeros((len(self.data_infos['Adj_list'][graph_id]), diff))], axis=1)
-            full_adj_list = np.concatenate([right, np.zeros((diff, diff + len(self.data_infos['Adj_list'][graph_id])))], axis=0)
-        else:
-            vertices = self.data_infos['Nodes'][graph_id]
-            full_adj_list = self.data_infos['Adj_list'][graph_id]
-
-        return np.asarray(vertices, np.int32), np.asarray(full_adj_list, np.float32), \
-               self.data_infos['graph_size'][graph_id], self.data_infos['Labels'][graph_id]
-
 
     def __py_func_map(self, graph_id):
 

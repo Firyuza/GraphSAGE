@@ -10,13 +10,15 @@ from datasets.builder import build_dataset
 from models.builder import build_graph
 from API.train import train_model, set_random_seed, get_root_logger
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 print("GPU Available: ", tf.test.is_gpu_available())
 # physical_devices = tf.config.list_physical_devices('GPU')
 # tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
-    parser.add_argument('--config', default='/home/firiuza/PycharmProjects/GraphSAGE/configs/GAT_ppi_config.py',
+    parser.add_argument('--config', default='/home/firiuza/PycharmProjects/GraphSAGE/configs/graphSAGE_ppi_config.py',
                         help='train config file path')
     parser.add_argument('--work_dir', default='', help='the dir to save logs and models')
     parser.add_argument(
@@ -48,13 +50,14 @@ if __name__ == '__main__':
 
     # set random seeds
     if args.seed is not None:
-        # logger.info('Set random seed to {}'.format(args.seed))
+        logger.info('Set random seed to {}'.format(args.seed))
         set_random_seed(args.seed)
 
-    datasets = [build_dataset(cfg.data.train)]
-    if len(cfg.workflow) == 2:
-        datasets.append(build_dataset(cfg.data.valid))
+    with tf.device('/device:CPU:0'):
+        datasets = [build_dataset(cfg.data.train)]
+        if len(cfg.workflow) == 2:
+            datasets.append(build_dataset(cfg.data.valid))
 
-    model = build_graph(cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
+        model = build_graph(cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
 
-    train_model(model, datasets, cfg)
+        train_model(model, datasets, cfg)

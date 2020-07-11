@@ -14,7 +14,7 @@ def build(cfg, registry, default_args=None):
 def build_aggregator(cfg):
     return build(cfg, AGGREGATOR)
 
-def build_custom_aggregator(cfg):
+def build_aggregator_layers(cfg):
     return build(cfg, CUSTOM_AGGREGATOR)
 
 def build_loss(cfg):

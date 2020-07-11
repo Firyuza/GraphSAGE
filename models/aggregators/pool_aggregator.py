@@ -5,11 +5,12 @@ from ..builder import build_attention_layer
 
 @AGGREGATOR.register_module
 class PoolAggregator(tf.keras.layers.Layer):
-    def __init__(self, activation, pool_op, attention_layer=None):
+    def __init__(self, activation, pool_op, use_concat, attention_layer=None):
         super(PoolAggregator, self).__init__()
 
         self.activation = getattr(tf.nn, activation)
         self.pool_op = pool_op
+        self.use_concat = use_concat
 
         self.attention_layer = attention_layer
         if attention_layer is not None:
@@ -24,11 +25,15 @@ class PoolAggregator(tf.keras.layers.Layer):
         self.bn1 = tf.keras.layers.BatchNormalization()
         self.bn1.build((None, transform_output_shape))
 
-        self.dense_out = tf.keras.layers.Dense(output_shape, input_shape=(dense_input_shape,),
-                                           name='layer_dense', activation=None)
-        self.dense_out.build((dense_input_shape,))
+        self.neigh_dense = tf.keras.layers.Dense(output_shape, input_shape=(transform_output_shape,),
+                                           name='neigh_dense', activation=None, use_bias=False)
+        self.self_dense = tf.keras.layers.Dense(output_shape, input_shape=(input_shape,),
+                                                 name='self_dense', activation=None, use_bias=False)
         self.bn2 = tf.keras.layers.BatchNormalization()
-        self.bn2.build((None, output_shape))
+        if self.use_concat:
+            self.bn2.build((None, 2 * output_shape))
+        else:
+            self.bn2.build((None, output_shape))
 
         if self.attention_layer is not None:
             self.attention_layer.build(attention_in_shape, attention_shared_out_shape, attention_out_shape)
@@ -42,13 +47,18 @@ class PoolAggregator(tf.keras.layers.Layer):
             self_nodes = self.attention_layer(self_nodes, neigh_nodes, training)
 
         neigh = self.transform_node_weight(neigh_nodes)
-        neigh = self.bn1(neigh, training=training)
+        neigh_nodes_upd = self.bn1(tf.reshape(neigh, [-1, int(neigh.shape[-1])]), training=training)
+        neigh = tf.reshape(neigh_nodes_upd, list(neigh.shape))
         neigh = getattr(tf, self.pool_op)(neigh, axis=1)
 
-        concat = tf.concat([self_nodes, neigh], axis=1)
-        concat = self.activation(concat)
+        neigh = self.neigh_dense(neigh)
+        self_nodes = self.self_dense(self_nodes)
 
-        output = self.dense_out(concat)
+        if self.use_concat:
+            output = tf.concat([self_nodes, neigh], axis=1)
+        else:
+            output = tf.add_n([self_nodes, neigh])
+
         output = self.bn2(output, training=training)
         output = self.activation(output)
 

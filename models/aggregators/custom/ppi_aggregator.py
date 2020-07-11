@@ -16,8 +16,8 @@ class PPIAggregator(BaseAggregator):
 
         super(PPIAggregator, self).build(input_shape)
 
-    def call_train(self, embedded_graph_nodes, graph_sizes, labels,
-                    all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes):
+    def call_train(self, embedded_graph_nodes, graph_sizes,
+                    all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels):
         nrof_graphs = len(graph_sizes)
 
         batch_self_nodes = None
@@ -51,8 +51,8 @@ class PPIAggregator(BaseAggregator):
 
         return updated_graph_nodes
 
-    def call_test(self, embedded_graph_nodes, graph_sizes, labels,
-                    all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes):
+    def call_test(self, embedded_graph_nodes, graph_sizes,
+                    all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels=None):
         nrof_graphs = len(graph_sizes)
 
         batch_self_nodes = None

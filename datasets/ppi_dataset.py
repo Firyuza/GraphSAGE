@@ -144,16 +144,16 @@ class PPIDataset(CustomDataset):
                 all_len_adj_nodes[i] = np.concatenate([all_len_adj_nodes[i],
                                                 np.zeros((diff), dtype=np.int32)], axis=0)
 
-        return np.asarray(vertices, np.float32), graph_size, labels, \
+        return np.asarray(vertices, np.float32), graph_size, \
                np.asarray(all_rnd_indices, dtype=np.int32), np.asarray(all_rnd_adj_mask, dtype=np.float32), \
-               np.asarray(all_len_adj_nodes, dtype=np.float32)
+               np.asarray(all_len_adj_nodes, dtype=np.float32), labels
 
     def prepare_train_data(self, graph_id):
         return tf.py_function(self.__py_func_map, [graph_id],
-                              [tf.float32, tf.int32, tf.int32,
-                               tf.int32, tf.float32, tf.float32])
+                              [tf.float32, tf.int32,
+                               tf.int32, tf.float32, tf.float32, tf.int32])
 
     def prepare_test_data(self, graph_id):
         return tf.py_function(self.__py_func_map, [graph_id],
-                              [tf.float32, tf.int32, tf.int32,
-                               tf.int32, tf.float32, tf.float32])
+                              [tf.float32, tf.int32,
+                               tf.int32, tf.float32, tf.float32, tf.int32])

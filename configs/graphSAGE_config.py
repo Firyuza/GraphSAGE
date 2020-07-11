@@ -142,8 +142,6 @@ optimizer = dict(
         lr_schedule=lr_schedule)
 )
 
-use_TensorBoard=True
-
 # yapf:enable
 # runtime settings
 total_epochs = 3

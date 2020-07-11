@@ -1,13 +1,13 @@
 from datetime import datetime
 
 # model settings
-nrof_neigh_per_batch=5
+nrof_neigh_per_batch=20
 depth=2
 num_classes = 121
 
 model = dict(
     type='GraphSAGE',
-    in_shape=200,
+    in_shape=50,
     out_shape=num_classes,
     activation='sigmoid',
     custom_aggregator=dict(
@@ -15,13 +15,13 @@ model = dict(
         nrof_neigh_per_batch=nrof_neigh_per_batch,
         depth=depth,
         aggregators_shape=None,
-        attention_shapes=[(50, 50, 1), (200, 50, 1)],
+        attention_shapes=[(50, 50, 1), (50, 50, 1)],
         aggregator_type=dict(
             type='GATAggregator',
             activation='leaky_relu',
             attention_layer=dict(
                 type='GATLayer',
-                attention_heads=4,
+                attention_heads=1,
                 attention_mechanism=dict(
                     type='SingleLayerMechanism'
                 ),
@@ -84,7 +84,7 @@ data_loader = dict(
 )
 # learning policy
 lr_schedule = dict(
-    initial_learning_rate=5e-4,
+    initial_learning_rate=3e-3,
     decay_steps=1000,
     decay_rate=0.99,
     staircase=True)
@@ -97,8 +97,6 @@ optimizer = dict(
         lr_schedule_type='ExponentialDecay',
         lr_schedule=lr_schedule)
 )
-
-use_TensorBoard=True
 
 # yapf:enable
 # runtime settings

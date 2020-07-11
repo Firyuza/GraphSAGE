@@ -41,7 +41,7 @@ class BaseGraph(tf.keras.models.Model, metaclass=ABCMeta):
         return
 
     @abstractmethod
-    def call_train(self, *args, training):
+    def call_train(self, *args):
         """
 
         :param graph_nodes:
@@ -55,7 +55,7 @@ class BaseGraph(tf.keras.models.Model, metaclass=ABCMeta):
     def call_test(self, *args):
        pass
 
-    def call(self, *args, training=True):
+    def call(self, *args, train_mode):
         """
         Calls either forward_train or forward_test depending on whether
         return_loss=True. Note this setting will change the expected inputs.
@@ -64,7 +64,7 @@ class BaseGraph(tf.keras.models.Model, metaclass=ABCMeta):
         should be double nested (i.e.  List[Tensor], List[List[dict]]), with
         the outer list indicating test time augmentations.
         """
-        if training:
+        if train_mode:
             return self.call_train(*args)
         else:
             return self.call_test(*args)

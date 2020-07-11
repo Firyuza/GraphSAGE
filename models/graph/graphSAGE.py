@@ -4,13 +4,13 @@ import tensorflow as tf
 from sklearn.metrics import f1_score
 
 from ..registry import GRAPH
-from ..builder import build_custom_aggregator, build_loss, build_accuracy
+from ..builder import build_aggregator_layers, build_loss, build_accuracy
 from .base import BaseGraph
 
 @GRAPH.register_module
 class GraphSAGE(BaseGraph):
     def __init__(self, in_shape, out_shape, activation,
-                 custom_aggregator,
+                 aggregator_layers,
                  loss_cls, accuracy_cls,
                  train_cfg, test_cfg):
         super(GraphSAGE, self).__init__()
@@ -22,7 +22,7 @@ class GraphSAGE(BaseGraph):
         if self.activation is not None:
             self.activation = getattr(tf.nn, activation)
 
-        self.custom_aggregator = build_custom_aggregator(custom_aggregator)
+        self.aggregator_layers = build_aggregator_layers(aggregator_layers)
 
         self.loss_graph = build_loss(loss_cls)
 
@@ -101,9 +101,9 @@ class GraphSAGE(BaseGraph):
         output = {self.accuracy_cls.type: acc_value,
                 'precision': precisions[0], 'recall': recalls[0]}
 
-        output = {**output,
-                  **{'precision_%d' % i: precisions[1][i] for i in range(len(precisions[1]))},
-                  **{'recall_%d' % i: recalls[1][i] for i in range(len(recalls[1]))}}
+        # output = {**output,
+        #           **{'precision_%d' % i: precisions[1][i] for i in range(len(precisions[1]))},
+        #           **{'recall_%d' % i: recalls[1][i] for i in range(len(recalls[1]))}}
 
         return output
 
@@ -127,20 +127,22 @@ class GraphSAGE(BaseGraph):
 
         return losses
 
-    def call_train(self, graphs_nodes, graph_sizes, labels,
-                   all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes):
+    def call_train(self, graphs_nodes, graph_sizes,
+                   all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels):
         results = {}
 
-        updated_graph_nodes = self.custom_aggregator(graphs_nodes, graph_sizes, labels,
-                                                     all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes)
+        updated_graph_nodes = self.custom_aggregator(graphs_nodes, graph_sizes,
+                                                     all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels,
+                                                     train_mode=True)
         updated_graph_nodes = self.output_dense(updated_graph_nodes)
+
+        predictions = self.activation(updated_graph_nodes)
+        results['output'] = predictions
 
         if len(labels.shape) > 1:
             batch_labels = None
             for g_i in range(len(graphs_nodes)):
-                graph_labels = tf.gather(labels[g_i],
-                                         tf.range(sum(graph_sizes[:g_i]),
-                                                  sum(graph_sizes[: (g_i + 1)])))
+                graph_labels = labels[g_i][:graph_sizes[g_i], :]
                 if batch_labels is None:
                     batch_labels = graph_labels
                 else:
@@ -148,23 +150,36 @@ class GraphSAGE(BaseGraph):
         else:
             batch_labels = np.expand_dims(labels, 1)
 
-        predictions = self.activation(updated_graph_nodes)
-        results['output'] = predictions
         results.update(self.call_loss(predictions, batch_labels))
         results.update(self.call_accuracy(predictions, batch_labels))
 
         return results
 
-    def call_test(self, graphs_nodes, graphs_adj_list, graph_sizes, labels=None):
+    def call_test(self, graphs_nodes, graph_sizes,
+                   all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels=None):
         results = {}
 
-        updated_graph_nodes = self.custom_aggregator(graphs_nodes, graphs_adj_list, graph_sizes, labels)
+        updated_graph_nodes = self.custom_aggregator(graphs_nodes, graph_sizes,
+                                                     all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels,
+                                                     train_mode=False)
         updated_graph_nodes = self.output_dense(updated_graph_nodes)
 
         predictions = self.activation(updated_graph_nodes)
         results['output'] = predictions
+
         if labels is not None:
-            results.update(self.call_loss(updated_graph_nodes, labels))
-            results.update(self.call_accuracy(predictions, labels))
+            if len(labels.shape) > 1:
+                batch_labels = None
+                for g_i in range(len(graphs_nodes)):
+                    graph_labels = labels[g_i][:graph_sizes[g_i], :]
+                    if batch_labels is None:
+                        batch_labels = graph_labels
+                    else:
+                        batch_labels = tf.concat([batch_labels, graph_labels], axis=0)
+            else:
+                batch_labels = np.expand_dims(labels, 1)
+
+        results.update(self.call_loss(updated_graph_nodes, batch_labels))
+        results.update(self.call_accuracy(predictions, batch_labels))
 
         return results
