@@ -16,7 +16,16 @@ Graph Attention Networks (Yoshua Bengio et al.)
 ![GAT](readme_data/GAT.png)
 
 
-### How to set up pipeline
+### Dependencies
+
+* Python==3.6+
+* tensorflow==
+* tensorflow-tensorboard==
+* numpy==
+* networkx==
+* tensorflow_addons==
+
+### Usage
 
 **Config file:**
 * In *model* dict define the model architecture
@@ -28,4 +37,18 @@ Graph Attention Networks (Yoshua Bengio et al.)
 **Training:**
 
 For training run *main_train.py* file
+
+
+### Results for GraphSAGE
+Valid *PPI* dataset
+
+Mean Aggregator | Max Pool Aggregator | RNN Aggregator 
+----------------| --------------------| --------------
+![MeanF1](readme_data/MeanF1.png) | ![MaxPoolF1](readme_data/MaxPoolF1.png) | ![RNNF1](readme_data/RNNF1.png)
+Node embeddings for label #23|Node embeddings for label #23 | Node embeddings for label #23
+![MeanEmbd](readme_data/MeanEmbd.png) | ![MaxPoolEmbd](readme_data/MaxPoolEmbd.png) | ![RNNEmbd](readme_data/RNNEmbdValid.png)
+
+### Author
+[Firiuza](https://medium.com/@Firiuza) medium / [Firyuza](https://github.com/Firyuza) github / [Firiuza](https://twitter.com/Firiuza1) twitter
+
 

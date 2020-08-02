@@ -3,6 +3,7 @@ import os.path as osp
 import os
 import time
 import tensorflow as tf
+import h5py
 
 from .callbacks.tensorboard_logger import TensorBoardLogger
 from .callbacks.callback import Callback
@@ -35,14 +36,13 @@ class Runner(object):
         self.model = model
         self.optimizer = optimizer
         self.batch_processor = batch_processor
+        self.restore_model_path = None
 
         # get model name from the model class
         if hasattr(self.model, 'module'):
             self._model_name = self.model.module.__class__.__name__
         else:
             self._model_name = self.model.__class__.__name__
-
-        # self.timestamp = get_time_str()
 
         self.tensorboard_logger = TensorBoardLogger(work_dir)
         self.callback = Callback(model, optimizer, self.tensorboard_logger)
@@ -87,20 +87,53 @@ class Runner(object):
         return self._max_iters
 
     def load_checkpoint(self, filename):
+        self.restore_model_path = filename
         self.logger.info('load checkpoint from %s', filename)
-        self.model = tf.saved_model.load(filename)
+
+        file = h5py.File(filename, 'r')
+        weight = []
+        for i in range(len(file.keys())):
+            weight.append(file['weight' + str(i)].value)
+        self.model.set_weights(weight)
+
+        self.step = int(filename.split('.h5')[0].split('-')[-1])
+        self.optimizer.assign_step(self.step)
 
         return
 
-    def save_checkpoint(self, out_dir, filename_tmpl='step_{}'):
+    def restore_optimizer_parameters(self):
+        if self.restore_model_path is not None:
+            file = h5py.File(self.restore_model_path.replace('model-', 'optimizer-'), 'r')
+            weight = []
+            for i in range(len(file.keys())):
+                weight.append(file['weight' + str(i)].value)
+            self.optimizer.set_weights(weight)
+
+            print('Optimizer parameters restored')
+
+        return
+
+    def save_checkpoint(self, out_dir, filename_tmpl='model-{}.h5'):
+        print('Saving variables')
         filename = filename_tmpl.format(self.iter)
         filepath = osp.join(out_dir, 'models')
         if not os.path.exists(filepath):
             os.makedirs(filepath)
-        filepath = osp.join(filepath, filename)
-        # optimizer = self.optimizer if save_optimizer else None
+        save_path = osp.join(filepath, filename)
 
-        tf.saved_model.save(self.model, filepath)
+        file = h5py.File(save_path, 'w')
+        weight = self.model.get_weights()
+        for i in range(len(weight)):
+            file.create_dataset('weight' + str(i), data=weight[i])
+        file.close()
+
+        filename = filename_tmpl.format(self.iter).replace('model', 'optimizer')
+        save_path = osp.join(filepath, filename)
+        file = h5py.File(save_path, 'w')
+        weight = self.optimizer.get_weights()
+        for i in range(len(weight)):
+            file.create_dataset('weight' + str(i), data=weight[i])
+        file.close()
 
         return
 
@@ -125,6 +158,9 @@ class Runner(object):
             self.callback.after_train_step(tape, outputs['total_loss'], outputs, self.step, self.mode)
             self.step += 1
 
+            if i == 0 and self._epoch == 0:
+                self.restore_optimizer_parameters()
+
         self.save_checkpoint(self.work_dir)
         self.callback.after_train_epoch()
         self._epoch += 1
@@ -136,17 +172,21 @@ class Runner(object):
         self.data_loader = data_loader
         self.callback.before_valid_epoch()
 
+        all_vis_embeddings = []
+        all_labels = []
         for i, data_batch in enumerate(data_loader.data_loader):
             self._inner_iter = i
             self.callback.before_valid_step()
 
-            outputs = self.batch_processor(self.model, data_batch, train_mode=False)
+            outputs, vis_embeddings, batch_labels = self.batch_processor(self.model, data_batch, train_mode=False)
+            all_vis_embeddings.extend(vis_embeddings.numpy())
+            all_labels.extend(batch_labels.numpy())
             if not isinstance(outputs, dict):
                 raise TypeError('batch_processor() must return a dict')
             self.outputs = outputs
             self.callback.after_valid_step(outputs, self.step, self.mode)
 
-        self.callback.after_valid_epoch()
+        self.callback.after_valid_epoch(self.mode, self.step, all_vis_embeddings, all_labels)
 
         return
 
@@ -157,6 +197,7 @@ class Runner(object):
         self.logger.info('Start running, work_dir: %s' % self.work_dir)
         self.logger.info('workflow: %s, max: %d epochs', workflow, max_epochs)
         while self.epoch < max_epochs:
+            print('Epoch %d' % self.epoch)
             for i, flow in enumerate(workflow):
                 mode, epochs = flow
                 print(mode)
@@ -167,7 +208,7 @@ class Runner(object):
                             'runner has no method named "{}" to run an epoch'.
                             format(mode))
                     epoch_runner = getattr(self, mode)
-                elif callable(mode):  # custom train()
+                elif callable(mode):
                     epoch_runner = mode
                 else:
                     raise TypeError('mode in workflow must be a str or '

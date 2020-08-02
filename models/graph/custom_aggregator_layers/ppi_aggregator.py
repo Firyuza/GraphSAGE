@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from ..base_aggregator import BaseAggregator
+from ...aggregators.base_aggregator import BaseAggregator
 from ...registry import CUSTOM_AGGREGATOR
 
 @CUSTOM_AGGREGATOR.register_module

@@ -27,8 +27,12 @@ class PoolAggregator(tf.keras.layers.Layer):
 
         self.neigh_dense = tf.keras.layers.Dense(output_shape, input_shape=(transform_output_shape,),
                                            name='neigh_dense', activation=None, use_bias=False)
+        self.neigh_dense.build((transform_output_shape, ))
+
         self.self_dense = tf.keras.layers.Dense(output_shape, input_shape=(input_shape,),
                                                  name='self_dense', activation=None, use_bias=False)
+        self.self_dense.build((input_shape, ))
+
         self.bn2 = tf.keras.layers.BatchNormalization()
         if self.use_concat:
             self.bn2.build((None, 2 * output_shape))

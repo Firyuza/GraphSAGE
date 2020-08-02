@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 import tensorflow as tf
 
 class BaseOptimizer(metaclass=ABCMeta):
+
     def __init__(self, optimizer_cfg):
         tf_lr_schedule = getattr(tf.keras.optimizers.schedules, optimizer_cfg.pop('lr_schedule_type'))
         lr_schedule = tf_lr_schedule(**optimizer_cfg.pop('lr_schedule'))
@@ -17,11 +18,25 @@ class BaseOptimizer(metaclass=ABCMeta):
 
         return
 
+    @abstractmethod
+    def apply_gradients(self, *args):
+        pass
+
     def get_current_lr(self, step):
         lr = self.optimizer.learning_rate.__call__(step).numpy()
 
         return lr
 
-    @abstractmethod
-    def apply_gradients(self, *args):
-        pass
+    def get_weights(self):
+
+        return self.optimizer.get_weights()
+
+    def set_weights(self, weights):
+        self.optimizer.set_weights(weights)
+
+        return
+
+    def assign_step(self, step):
+        self.optimizer.iterations.assign(step)
+
+        return

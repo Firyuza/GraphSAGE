@@ -10,7 +10,7 @@ from datasets.builder import build_dataset
 from models.builder import build_graph
 from API.train import train_model, set_random_seed, get_root_logger
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 print("GPU Available: ", tf.test.is_gpu_available())
 # physical_devices = tf.config.list_physical_devices('GPU')
@@ -53,11 +53,13 @@ if __name__ == '__main__':
         logger.info('Set random seed to {}'.format(args.seed))
         set_random_seed(args.seed)
 
-    with tf.device('/device:CPU:0'):
-        datasets = [build_dataset(cfg.data.train)]
-        if len(cfg.workflow) == 2:
-            datasets.append(build_dataset(cfg.data.valid))
+    # with tf.device('/device:CPU:0'):
+    # datasets = [build_dataset(cfg.data.train)]
+    # if len(cfg.workflow) == 2:
+    #     datasets.append(build_dataset(cfg.data.valid))
 
-        model = build_graph(cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
+    datasets = [build_dataset(cfg.data.valid)]
 
-        train_model(model, datasets, cfg)
+    model = build_graph(cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
+
+    train_model(model, datasets, cfg)

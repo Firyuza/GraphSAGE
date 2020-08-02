@@ -5,11 +5,12 @@ from ..builder import build_attention_layer
 
 @AGGREGATOR.register_module
 class RNNAggregator(tf.keras.layers.Layer):
-    def __init__(self, cell_type, activation, use_concat, attention_layer=None):
+    def __init__(self, cell_type, cell_params, activation, use_concat, attention_layer=None):
         super(RNNAggregator, self).__init__()
 
         self.activation = getattr(tf.nn, activation)
         self.cell_type = cell_type
+        self.cell_params = cell_params
         self.use_concat = use_concat
 
         self.attention_layer = attention_layer
@@ -19,7 +20,7 @@ class RNNAggregator(tf.keras.layers.Layer):
     def build(self, input_shape_cell, cell_units, input_shape_dense, output_shape_dense,
               attention_in_shape=None, attention_shared_out_shape=None, attention_out_shape=None):
         self.cell = tf.keras.layers.RNN(
-            getattr(tf.keras.layers, self.cell_type)(cell_units),
+            getattr(tf.keras.layers, self.cell_type)(cell_units, **self.cell_params),
             input_shape=input_shape_cell)
         self.cell.build(input_shape_cell)
 

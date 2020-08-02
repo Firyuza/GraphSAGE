@@ -34,7 +34,9 @@ class Callback:
     def before_valid_epoch(self):
         return
 
-    def after_valid_epoch(self):
+    def after_valid_epoch(self, mode, step, embeddings, labels):
+        self.tensorboard_logger.log_embeddings(mode, step, embeddings, labels)
+
         return
 
     def before_valid(self):

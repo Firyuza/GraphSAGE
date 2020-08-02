@@ -42,7 +42,7 @@ class GraphSAGE(BaseGraph):
                                            name='dense_output', activation=None)
         self.output_dense.build((self.in_shape,))
 
-        self.custom_aggregator.build(input_shape)
+        self.aggregator_layers.build(input_shape)
 
         return
 
@@ -131,7 +131,7 @@ class GraphSAGE(BaseGraph):
                    all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels):
         results = {}
 
-        updated_graph_nodes = self.custom_aggregator(graphs_nodes, graph_sizes,
+        updated_graph_nodes = self.aggregator_layers(graphs_nodes, graph_sizes,
                                                      all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels,
                                                      train_mode=True)
         updated_graph_nodes = self.output_dense(updated_graph_nodes)
@@ -159,9 +159,11 @@ class GraphSAGE(BaseGraph):
                    all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels=None):
         results = {}
 
-        updated_graph_nodes = self.custom_aggregator(graphs_nodes, graph_sizes,
+        updated_graph_nodes = self.aggregator_layers(graphs_nodes, graph_sizes,
                                                      all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels,
                                                      train_mode=False)
+        vis_embeddings = updated_graph_nodes
+
         updated_graph_nodes = self.output_dense(updated_graph_nodes)
 
         predictions = self.activation(updated_graph_nodes)
@@ -182,4 +184,4 @@ class GraphSAGE(BaseGraph):
         results.update(self.call_loss(updated_graph_nodes, batch_labels))
         results.update(self.call_accuracy(predictions, batch_labels))
 
-        return results
+        return results, vis_embeddings, batch_labels

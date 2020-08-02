@@ -19,8 +19,11 @@ class MeanAggregator(tf.keras.layers.Layer):
               attention_in_shape=None, attention_shared_out_shape=None, attention_out_shape=None):
         self.self_dense = tf.keras.layers.Dense(output_shape, input_shape=(input_shape,),
                                            name='self_dense', activation=None, use_bias=False)
+        self.self_dense.build((input_shape,))
+
         self.neigh_dense = tf.keras.layers.Dense(output_shape, input_shape=(input_shape,),
                                                 name='neigh_dense', activation=None, use_bias=False)
+        self.neigh_dense.build((input_shape,))
 
         self.bn = tf.keras.layers.BatchNormalization()
         if self.use_concat:

@@ -48,7 +48,7 @@ def batch_processor(model, data, train_mode):
     :param train_mode:
     :return:
     """
-    results = model(*data, train_mode=train_mode)
+    results, vis_embeddings, batch_labels = model(*data, train_mode=train_mode)
 
     print_str = ''
     for key, value in results.items():
@@ -58,7 +58,7 @@ def batch_processor(model, data, train_mode):
 
     print(print_str)
 
-    return results
+    return results, vis_embeddings, batch_labels
 
 def train_model(model,
                     dataset,
@@ -93,5 +93,8 @@ def train_model(model,
         model, batch_processor, optimizer, cfg.work_dir, logger=logger)
     # an ugly walkaround to make the .log and .log.json filenames the same
     runner.timestamp = timestamp
+
+    if cfg.restore_model_path:
+        runner.load_checkpoint(cfg.restore_model_path)
 
     runner.run(data_loaders, cfg.workflow, cfg.total_epochs)
