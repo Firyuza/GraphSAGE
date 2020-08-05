@@ -48,7 +48,7 @@ def batch_processor(model, data, train_mode):
     :param train_mode:
     :return:
     """
-    results, vis_embeddings, batch_labels = model(*data, train_mode=train_mode)
+    results, vis_embeddings, batch_labels, predictions = model(*data, train_mode=train_mode)
 
     print_str = ''
     for key, value in results.items():
@@ -58,7 +58,7 @@ def batch_processor(model, data, train_mode):
 
     print(print_str)
 
-    return results, vis_embeddings, batch_labels
+    return results, vis_embeddings, batch_labels, predictions
 
 def train_model(model,
                     dataset,

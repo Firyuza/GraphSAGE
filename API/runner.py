@@ -148,7 +148,8 @@ class Runner(object):
             self.callback.before_train_step()
 
             with tf.GradientTape() as tape:
-                outputs = self.batch_processor(self.model, data_batch, train_mode=True, **kwargs)
+                outputs, vis_embeddings, batch_labels, predictions = self.batch_processor(self.model, data_batch,
+                                                                                          train_mode=True, **kwargs)
 
             if not isinstance(outputs, dict):
                 raise TypeError('batch_processor() must return a dict')
@@ -174,19 +175,23 @@ class Runner(object):
 
         all_vis_embeddings = []
         all_labels = []
+        all_predictions = []
         for i, data_batch in enumerate(data_loader.data_loader):
             self._inner_iter = i
             self.callback.before_valid_step()
 
-            outputs, vis_embeddings, batch_labels = self.batch_processor(self.model, data_batch, train_mode=False)
+            outputs, vis_embeddings, batch_labels, predictions = self.batch_processor(self.model, data_batch,
+                                                                                      train_mode=False)
             all_vis_embeddings.extend(vis_embeddings.numpy())
             all_labels.extend(batch_labels.numpy())
+            all_predictions.extend(predictions.numpy())
             if not isinstance(outputs, dict):
                 raise TypeError('batch_processor() must return a dict')
             self.outputs = outputs
             self.callback.after_valid_step(outputs, self.step, self.mode)
 
-        self.callback.after_valid_epoch(self.mode, self.step, all_vis_embeddings, all_labels)
+        self.callback.after_valid_epoch(self.mode, self.step, all_vis_embeddings,
+                                        all_labels, predictions)
 
         return
 

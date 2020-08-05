@@ -1,6 +1,37 @@
 from datetime import datetime
 
 # aggregator_layers=dict(
+#             type='PPIAggregator',
+#             nrof_neigh_per_batch=nrof_neigh_per_batch,
+#             depth=depth,
+#             aggregators_shape=[((None, nrof_neigh_per_batch, 50), 50, 50, 50),
+#                                ((None, nrof_neigh_per_batch, 100), 100, 100, 50)],
+#             attention_shapes=[(50, 50, 1), (100, 100, 1)],
+#             aggregator_type=dict(
+#                 type='RNNAggregator',
+#                 activation='relu',
+#                 cell_type='LSTMCell',
+#                 cell_params=dict(
+#                     activation='tanh',
+#                     recurrent_activation='sigmoid',
+#                     dropout=0.0,
+#                     recurrent_dropout=0.0
+#                 ),
+#                 use_concat=True,
+#                 attention_layer=None
+#                 # attention_layer=dict(
+#                 #     type='GATLayer',
+#                 #     attention_heads=1,
+#                 #     attention_mechanism=dict(
+#                 #         type='SingleLayerMechanism'
+#                 #     ),
+#                 #     activation='leaky_relu',
+#                 #     output_activation='sigmoid'
+#                 # )
+#             )
+#     )
+
+# aggregator_layers=dict(
 #         type='PPIAggregator',
 #         nrof_neigh_per_batch=nrof_neigh_per_batch,
 #         depth=depth,
@@ -23,31 +54,6 @@ from datetime import datetime
 #         ),
 #     )
 
-# aggregator_layers=dict(
-#         type='PPIAggregator',
-#         nrof_neigh_per_batch=nrof_neigh_per_batch,
-#         depth=depth,
-#         aggregators_shape=[(50, 50, 100, 50), (100, 50, 100, 50)],
-#         attention_shapes=[(50, 50, 1), (100, 50, 1)],
-#         aggregator_type=dict(
-#             type='PoolAggregator',
-#             activation='leaky_relu',
-#             pool_op='reduce_max',
-#             use_concat=True,
-#             attention_layer=None
-#             # attention_layer=dict(
-#             #     type='GATLayer',
-#             #     attention_heads=1,
-#             #     attention_mechanism=dict(
-#             #         type='SingleLayerMechanism'
-#             #     ),
-#             #     activation='leaky_relu',
-#             #     output_activation='sigmoid'
-#             # )
-#         )
-# )
-
-
 # model settings
 nrof_neigh_per_batch=25
 depth=2
@@ -59,34 +65,27 @@ model = dict(
     out_shape=num_classes,
     activation='sigmoid',
     aggregator_layers=dict(
-            type='PPIAggregator',
-            nrof_neigh_per_batch=nrof_neigh_per_batch,
-            depth=depth,
-            aggregators_shape=[((None, nrof_neigh_per_batch, 50), 50, 50, 50),
-                               ((None, nrof_neigh_per_batch, 100), 100, 100, 50)],
-            attention_shapes=[(50, 50, 1), (100, 100, 1)],
-            aggregator_type=dict(
-                type='RNNAggregator',
-                activation='relu',
-                cell_type='LSTMCell',
-                cell_params=dict(
-                    activation='tanh',
-                    recurrent_activation='sigmoid',
-                    dropout=0.0,
-                    recurrent_dropout=0.0
-                ),
-                use_concat=True,
-                attention_layer=None
-                # attention_layer=dict(
-                #     type='GATLayer',
-                #     attention_heads=1,
-                #     attention_mechanism=dict(
-                #         type='SingleLayerMechanism'
-                #     ),
-                #     activation='leaky_relu',
-                #     output_activation='sigmoid'
-                # )
-            )
+        type='PPIAggregator',
+        nrof_neigh_per_batch=nrof_neigh_per_batch,
+        depth=depth,
+        aggregators_shape=[(50, 50, 100, 50), (100, 50, 100, 50)],
+        attention_shapes=[(50, 50, 1), (100, 50, 1)],
+        aggregator_type=dict(
+            type='PoolAggregator',
+            activation='leaky_relu',
+            pool_op='reduce_max',
+            use_concat=True,
+            attention_layer=None
+            # attention_layer=dict(
+            #     type='GATLayer',
+            #     attention_heads=1,
+            #     attention_mechanism=dict(
+            #         type='SingleLayerMechanism'
+            #     ),
+            #     activation='leaky_relu',
+            #     output_activation='sigmoid'
+            # )
+        )
     ),
     loss_cls=dict(
         type='BinaryCrossEntropyLoss',
@@ -167,8 +166,8 @@ log_level = 'INFO'
 work_dir = '/home/firiuza/models/GraphModels/run_models/run_ppi_%s_%s' % (model['aggregator_layers']['aggregator_type']['type'],
                                                                              datetime.strftime(datetime.now(), '%Y%m%d-%H%M%S'))
 
-restore_model_path = '/home/firiuza/models/GraphModels/run_models/run_ppi_RNNAggregator_20200718-171553/models/model-5460.h5'
-    # '/home/firiuza/models/GraphModels/run_models/run_ppi_PoolAggregator_20200718-180225/models/model-6880.h5'
+restore_model_path = '/home/firiuza/models/GraphModels/run_models/run_ppi_PoolAggregator_20200718-180225/models/model-6880.h5'
     # '/home/firiuza/models/GraphModels/run_models/run_ppi_MeanAggregator_20200718-182848/models/model-6910.h5'
+    # '/home/firiuza/models/GraphModels/run_models/run_ppi_RNNAggregator_20200718-171553/models/model-5460.h5'
 
-workflow = [('valid', 1)] #('train', 1),
+workflow = [('train', 1), ('valid', 1)]

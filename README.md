@@ -19,8 +19,8 @@ There are **GraphSAGE**, **GAT** models. Other models will be added soon. Stay t
 ### Dependencies
 
 * Python==3.6+
-* tensorflow==2.1.1
-* tensorflow-tensorboard==2.1.0
+* tensorflow==2.3.0
+* tensorflow-tensorboard==2.3.0
 * numpy==1.18
 * networkx==2.4
 * tensorflow_addons==0.9.1

@@ -134,6 +134,7 @@ class GraphSAGE(BaseGraph):
         updated_graph_nodes = self.aggregator_layers(graphs_nodes, graph_sizes,
                                                      all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels,
                                                      train_mode=True)
+        vis_embeddings = updated_graph_nodes
         updated_graph_nodes = self.output_dense(updated_graph_nodes)
 
         predictions = self.activation(updated_graph_nodes)
@@ -153,7 +154,7 @@ class GraphSAGE(BaseGraph):
         results.update(self.call_loss(predictions, batch_labels))
         results.update(self.call_accuracy(predictions, batch_labels))
 
-        return results
+        return results, vis_embeddings, batch_labels, predictions
 
     def call_test(self, graphs_nodes, graph_sizes,
                    all_rnd_indices, all_rnd_adj_mask, all_len_adj_nodes, labels=None):
@@ -184,4 +185,4 @@ class GraphSAGE(BaseGraph):
         results.update(self.call_loss(updated_graph_nodes, batch_labels))
         results.update(self.call_accuracy(predictions, batch_labels))
 
-        return results, vis_embeddings, batch_labels
+        return results, vis_embeddings, batch_labels, predictions
